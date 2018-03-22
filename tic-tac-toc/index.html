@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Tic Tac Toe - Vanilla</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="game">
+    <div class="game-board">
+      <div>
+        <div class="board-row">
+          <button class="square"></button>
+          <button class="square"></button>
+          <button class="square"></button>
+        </div>
+        <div class="board-row">
+          <button class="square"></button>
+          <button class="square"></button>
+          <button class="square"></button>
+        </div>
+        <div class="board-row">
+          <button class="square"></button>
+          <button class="square"></button>
+          <button class="square"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-info" id="game-info">
+      <div>Next Player: X</div>
+      <ol>
+        <li>
+          <button>Go to game start</button>
+        </li>
+      </ol>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('click', function(e) {
+      if (e.target.tagName === 'A' && e.target.getAttribute('href') === '#') {
+        e.preventDefault();
+      }
+    });
+  </script>
+  <script src="index.js"></script>
+</body>
+</html>
