@@ -68,11 +68,6 @@ var homeBtn = $('#home-button');
 $(document).ready(function(){
 	toggleLabel.click(function(){
 		$('#nav').toggleClass('open');
-    // if ($('.drawer-toggle:checked').length === 1) {
-    //   drawer.show();
-    // } else if ($('.drawer-toggle:checked').length === 0) {
-    //   drawer.hide();
-    // }
 	});
 });
 
