@@ -4,7 +4,7 @@ function TodoListItem(props) {
   return (
     <li index={props.index} className={props.isChecked ? 'completed' : ''} >
       <div className="view">
-        <input className="toggle" type="checkbox" onChange={props.onChange}/>        
+        <input className="toggle" type="checkbox" checked={props.isChecked ? 'checked' : ''} onChange={props.onChange}/>        
         <label>{props.todoItem}</label>
         <button className="destroy" onClick={props.onClick} />
       </div>
@@ -16,20 +16,19 @@ function TodoListItem(props) {
 
 class TodoLists extends React.Component {
   render() {
-    // console.log(this.props.checkedList);
-    const todoItems = this.props.todoItems;
-    const listItems = todoItems.map((item, index) => ((
+    const todoList = this.props.todoList;
+    const todoListItems = todoList.map((obj, index) => ((
       <TodoListItem 
-      isChecked={this.props.checkedList.indexOf(index)!==-1} 
+      isChecked={todoList[index].isChecked} 
       onChange={() => this.props.onChange(index)} 
       onClick={() => this.props.onClick(index)}
       index={index}
-      todoItem={item} 
+      todoItem={todoList[index].todoItem} 
       />
     )));
     return (
       <ul className="todo-list">
-        {listItems}
+        {todoListItems}
       {/* <TodoListItem todoItem={this.props.todoItem} /> */}
       {/* <li className="completed">
         <div className="view">
@@ -56,9 +55,11 @@ class App extends React.Component {
   constructor(props){
     super(props);
     this.ref = React.createRef();
-    this.state = {
-      todoItems: [],
-      checkedList: [], 
+    this.state = { 
+      todoList: [
+        // { todoItem: ,     
+        // isChecked: }
+      ],
       istoggle: false,
     };
     this.handleKeyPress = this.handleKeyPress.bind(this);
@@ -71,52 +72,46 @@ class App extends React.Component {
   handleKeyPress(e) {
     if(e.key == 'Enter' && e.target.value !== "") {
       const newItem = e.target.value;
-      const prevItems = this.state.todoItems.slice();
-      prevItems.push(newItem);
-      // console.log(prevItems);
-      this.setState({ todoItems: prevItems });
+      const prevTodoList = this.state.todoList.slice();
+      const pushValue = { todoItem: newItem, isChecked: this.state.istoggle ? true : false};
+      prevTodoList.push(pushValue);
+      this.setState({ todoList: prevTodoList });
     }
   }
 
-  handleClick(listIndex) {
-    console.log("index="+listIndex);
-    const prevTodoItems = this.state.todoItems.slice();
-    const prevCheckedList = this.state.checkedList.slice();
-    prevTodoItems.splice(listIndex,1);
-    prevCheckedList.splice(prevCheckedList.indexOf(listIndex),1);
-    console.log(prevTodoItems);
-    console.log(prevCheckedList);
-    this.setState({ todoItems: prevTodoItems, checkedList: prevCheckedList });
+  handleClick(itemIndex) {
+    const prevTodoList = this.state.todoList.slice();
+    const removedItem = prevTodoList.splice(itemIndex,1);
+    this.setState({ todoList: prevTodoList });
   }
 
-  handleChange(listIndex) {
-    const prevCheckedList = this.state.checkedList.slice();
-    if(prevCheckedList.indexOf(listIndex) === -1) {
-      prevCheckedList.push(listIndex); 
-      this.setState({ checkedList: prevCheckedList });
-      console.log(prevCheckedList);
-    }else if(prevCheckedList.indexOf(listIndex) !== -1) {
-      prevCheckedList.splice(prevCheckedList.indexOf(listIndex),1);
-      this.setState({ checkedList: prevCheckedList });
-      console.log(prevCheckedList);
-    };
+  handleChange(itemIndex) {
+    const prevTodoList = this.state.todoList.slice();
+    prevTodoList[itemIndex].isChecked = prevTodoList[itemIndex].isChecked ? false : true;
+    this.setState({ todoList: prevTodoList });
   }
 
-  handleToggle(){
-    console.log("click");
-    // const prevTodoItems = this.state.todoItems.slice();
-    // const allCheckedList = [];
-    // prevTodoItems.map((item, i) => allCheckedList.push(i));
-    const toggleValue = this.state.istoggle ? false : true;
-    this.setState({ istoggle: toggleValue });
-    console.log(this.state.istoggle);
+  handleToggle() {
+    const prevTodoList = this.state.todoList.slice();
+    if(this.state.istoggle){
+      var toggleValue =  !this.state.istoggle;
+      prevTodoList.map((value, index) => prevTodoList[index].isChecked = toggleValue);
+    }else if(!this.state.istoggle){
+      var toggleValue =  !this.state.istoggle;
+      prevTodoList.map((value, index) => prevTodoList[index].isChecked = toggleValue);
+    }
+    console.log('토글의 상태는 ' + toggleValue);
+    this.setState({ todoList: prevTodoList, istoggle: toggleValue });
   }
 
-  countItemLeft(){
-    const wholeItem = this.state.todoItems.length;
-    const checkedItem = this.state.checkedList.length;
-    const ItemLeft = wholeItem - checkedItem;
-    return ItemLeft
+  countItemLeft() {
+    const prevTodoList = this.state.todoList.slice();
+    const wholeItem = this.state.todoList.length;
+    const checkedArr = [];
+    prevTodoList.map((value, index) => checkedArr.push(prevTodoList[index].isChecked));
+    const checkedItem = checkedArr.filter(value => value).length;
+    const itemLeft = wholeItem - checkedItem;
+    return itemLeft;
   }
 
   render() {
@@ -136,10 +131,9 @@ class App extends React.Component {
             <input id="toggle-all" className="toggle-all" type="checkbox" />
             <label htmlFor="toggle-all" onClick={this.handleToggle}>Mark all as complete</label>
             <TodoLists
-              checkedList={this.state.checkedList}
+              todoList={this.state.todoList}
               onClick={this.handleClick} 
               onChange={this.handleChange}
-              todoItems={this.state.todoItems}
             />
           </section>
           <footer className="footer">
