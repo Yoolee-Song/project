@@ -2,13 +2,13 @@ import React from 'react';
 
 function TodoListItem(props) {
   return (
-    <li index={props.index} className={props.isChecked ? 'completed' : ''}>
+    <li index={props.index} className={props.isChecked ? 'completed' : ''} >
       <div className="view">
-        <input className="toggle" type="checkbox" onClick={props.onClick}/>
+        <input className="toggle" type="checkbox" onChange={props.onChange}/>        
         <label>{props.todoItem}</label>
-        <button className="destroy" />
+        <button className="destroy" onClick={props.onClick} />
       </div>
-      <input className="edit" value="Create a TodoMVC template" />
+      <input className="edit" value={props.todoItem} />
     </li>
   );
 }
@@ -16,12 +16,13 @@ function TodoListItem(props) {
 
 class TodoLists extends React.Component {
   render() {
-    console.log(this.props.checkedList);
+    // console.log(this.props.checkedList);
     const todoItems = this.props.todoItems;
     const listItems = todoItems.map((item, index) => ((
       <TodoListItem 
       isChecked={this.props.checkedList.indexOf(index)!==-1} 
-      onClick={() => this.props.onClick(index)} 
+      onChange={() => this.props.onChange(index)} 
+      onClick={() => this.props.onClick(index)}
       index={index}
       todoItem={item} 
       />
@@ -58,10 +59,13 @@ class App extends React.Component {
     this.state = {
       todoItems: [],
       checkedList: [], 
+      istoggle: false,
     };
     this.handleKeyPress = this.handleKeyPress.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.handleToggle = this.handleToggle.bind(this);
     this.countItemLeft = this.countItemLeft.bind(this);
+    this.handleChange = this.handleChange.bind(this);
   }
 
   handleKeyPress(e) {
@@ -69,29 +73,50 @@ class App extends React.Component {
       const newItem = e.target.value;
       const prevItems = this.state.todoItems.slice();
       prevItems.push(newItem);
-      console.log(prevItems);
+      // console.log(prevItems);
       this.setState({ todoItems: prevItems });
     }
   }
 
   handleClick(listIndex) {
+    console.log("index="+listIndex);
+    const prevTodoItems = this.state.todoItems.slice();
+    const prevCheckedList = this.state.checkedList.slice();
+    prevTodoItems.splice(listIndex,1);
+    prevCheckedList.splice(prevCheckedList.indexOf(listIndex),1);
+    console.log(prevTodoItems);
+    console.log(prevCheckedList);
+    this.setState({ todoItems: prevTodoItems, checkedList: prevCheckedList });
+  }
+
+  handleChange(listIndex) {
     const prevCheckedList = this.state.checkedList.slice();
     if(prevCheckedList.indexOf(listIndex) === -1) {
       prevCheckedList.push(listIndex); 
       this.setState({ checkedList: prevCheckedList });
+      console.log(prevCheckedList);
     }else if(prevCheckedList.indexOf(listIndex) !== -1) {
       prevCheckedList.splice(prevCheckedList.indexOf(listIndex),1);
       this.setState({ checkedList: prevCheckedList });
+      console.log(prevCheckedList);
     };
+  }
+
+  handleToggle(){
+    console.log("click");
+    // const prevTodoItems = this.state.todoItems.slice();
+    // const allCheckedList = [];
+    // prevTodoItems.map((item, i) => allCheckedList.push(i));
+    const toggleValue = this.state.istoggle ? false : true;
+    this.setState({ istoggle: toggleValue });
+    console.log(this.state.istoggle);
   }
 
   countItemLeft(){
     const wholeItem = this.state.todoItems.length;
-    console.log(wholeItem);
     const checkedItem = this.state.checkedList.length;
     const ItemLeft = wholeItem - checkedItem;
     return ItemLeft
-    console.log(ItemLeft);
   }
 
   render() {
@@ -109,15 +134,16 @@ class App extends React.Component {
           </header>
           <section className="main">
             <input id="toggle-all" className="toggle-all" type="checkbox" />
-            <label htmlFor="toggle-all">Mark all as complete</label>
+            <label htmlFor="toggle-all" onClick={this.handleToggle}>Mark all as complete</label>
             <TodoLists
               checkedList={this.state.checkedList}
               onClick={this.handleClick} 
+              onChange={this.handleChange}
               todoItems={this.state.todoItems}
             />
           </section>
           <footer className="footer">
-            <span className="todo-count"><strong>{this.countItemLeft}</strong> item left</span>
+            <span className="todo-count"><strong>{this.countItemLeft()}</strong> item left</span>
             <ul className="filters">
               <li>
                 <a className="selected" href="#/">All</a>
