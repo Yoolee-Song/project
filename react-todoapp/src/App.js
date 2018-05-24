@@ -2,13 +2,13 @@ import React from 'react';
 
 function TodoListItem(props) {
   return (
-    <li index={props.index} className={props.isChecked ? 'completed' : ''} >
+    <li index={props.index} className={props.isChecked + " " + props.isEditing} onDoubleClick={props.onDoubleClick}>
       <div className="view">
         <input className="toggle" type="checkbox" checked={props.isChecked ? 'checked' : ''} onChange={props.onChange}/>        
         <label>{props.todoItem}</label>
         <button className="destroy" onClick={props.onClick} />
       </div>
-      <input className="edit" value={props.todoItem} />
+      <input className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress} autofocus/>
     </li>
   );
 }
@@ -19,11 +19,15 @@ class TodoLists extends React.Component {
     const todoList = this.props.todoList;
     const todoListItems = todoList.map((obj, index) => ((
       <TodoListItem 
-      isChecked={todoList[index].isChecked} 
+      isChecked={todoList[index].isChecked ? 'completed':''} 
       onChange={() => this.props.onChange(index)} 
       onClick={() => this.props.onClick(index)}
+      onDoubleClick={() => this.props.onDoubleClick(index)}
+      isEditing={todoList[index].isEditing ? 'editing' : ''}
       index={index}
       todoItem={todoList[index].todoItem} 
+      onKeyPress={(event) => this.props.onKeyPress(event, index)}
+      onKeyDown={(event) => this.props.onKeyDown(event, index)}
       />
     )));
     return (
@@ -58,23 +62,56 @@ class App extends React.Component {
     this.state = { 
       todoList: [
         // { todoItem: ,     
-        // isChecked: }
+        // isChecked: 
+        // isEditing: }
       ],
       istoggle: false,
     };
+    this.handleEnterKeyPress = this.handleEnterKeyPress.bind(this);
     this.handleKeyPress = this.handleKeyPress.bind(this);
     this.handleClick = this.handleClick.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.countItemLeft = this.countItemLeft.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.handleDoubleClick = this.handleDoubleClick.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.clearCompleted = this.clearCompleted.bind(this);
+    this.handleClickClear = this.handleClickClear.bind(this);
   }
 
-  handleKeyPress(e) {
+  handleEnterKeyPress(e) {
     if(e.key == 'Enter' && e.target.value !== "") {
       const newItem = e.target.value;
       const prevTodoList = this.state.todoList.slice();
-      const pushValue = { todoItem: newItem, isChecked: this.state.istoggle ? true : false};
+      const randomNum = Math.floor(Math.random()*1000000);
+      const pushValue = { todoId: randomNum, todoItem: newItem, isChecked: this.state.istoggle ? true : false, isEditing: false};
       prevTodoList.push(pushValue);
+      this.setState({ todoList: prevTodoList });
+      e.target.value = '';
+    }
+  }
+
+  handleKeyPress(e, index){
+    const changedValue = e.target.value;
+    const prevTodoList = this.state.todoList.slice();
+    
+    if(e.key == 'Enter' && changedValue !== "") {
+      console.log(changedValue + " 인덱스는 " + index)
+      const fixedTodoList = prevTodoList[index];
+      fixedTodoList.todoItem = changedValue;
+      fixedTodoList.isEditing = false;
+      this.setState({ todoList: prevTodoList });
+    }else if(e.key == 'Enter' && changedValue === "") {
+      prevTodoList.splice(index,1);
+      this.setState({ todoList: prevTodoList });
+    }
+  }
+
+  handleKeyDown(e, index) {
+    const prevTodoList = this.state.todoList.slice();
+
+    if(e.key == 'Escape') {
+      prevTodoList[index].isEditing = false;
       this.setState({ todoList: prevTodoList });
     }
   }
@@ -91,6 +128,12 @@ class App extends React.Component {
     this.setState({ todoList: prevTodoList });
   }
 
+  handleDoubleClick(itemIndex) {
+    const prevTodoList = this.state.todoList.slice();
+    prevTodoList[itemIndex].isEditing = true;
+    this.setState({ todoList: prevTodoList });
+  }
+
   handleToggle() {
     const prevTodoList = this.state.todoList.slice();
     if(this.state.istoggle){
@@ -104,6 +147,16 @@ class App extends React.Component {
     this.setState({ todoList: prevTodoList, istoggle: toggleValue });
   }
 
+  handleClickClear() {
+    const prevTodoList = this.state.todoList.slice();
+    const clearItemArr = [];
+    prevTodoList.map(function(value){
+      value.isChecked ? clearItemArr.push(value) : null;
+    });
+    clearItemArr.forEach((value) => prevTodoList.splice(prevTodoList.indexOf(value),1));
+    this.setState({ todoList: prevTodoList });
+  }
+
   countItemLeft() {
     const prevTodoList = this.state.todoList.slice();
     const wholeItem = this.state.todoList.length;
@@ -112,6 +165,16 @@ class App extends React.Component {
     const checkedItem = checkedArr.filter(value => value).length;
     const itemLeft = wholeItem - checkedItem;
     return itemLeft;
+  }
+
+  clearCompleted() {
+    const prevTodoList = this.state.todoList.slice();
+    const checkedItem = prevTodoList.filter(v => v.isChecked).length;
+    return checkedItem > 0 ? 'Clear completed' : ''
+  }
+
+  componentDidUpdate() {
+    console.log(this.state.todoList);
   }
 
   render() {
@@ -123,7 +186,7 @@ class App extends React.Component {
             <input 
               className="new-todo" 
               placeholder="What needs to be done?" 
-              onKeyPress={this.handleKeyPress}
+              onKeyPress={this.handleEnterKeyPress}
               autofocus 
             />
           </header>
@@ -134,6 +197,9 @@ class App extends React.Component {
               todoList={this.state.todoList}
               onClick={this.handleClick} 
               onChange={this.handleChange}
+              onDoubleClick={this.handleDoubleClick}
+              onKeyPress={this.handleKeyPress}
+              onKeyDown={this.handleKeyDown}
             />
           </section>
           <footer className="footer">
@@ -149,7 +215,7 @@ class App extends React.Component {
                 <a href="#/completed">Completed</a>
               </li>
             </ul>
-            <button className="clear-completed"></button>
+            <button className="clear-completed" onClick={this.handleClickClear}>{this.clearCompleted()}</button>
           </footer>
         </section>
       </div>
