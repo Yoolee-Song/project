@@ -2,13 +2,13 @@ import React from 'react';
 
 function TodoListItem(props) {
   return (
-    <li index={props.index} className={props.isChecked + " " + props.isEditing} onDoubleClick={props.onDoubleClick}>
+    <li data-id={props.id} className={props.isChecked + " " + props.isEditing + " " + props.isHidden} onDoubleClick={props.onDoubleClick}>
       <div className="view">
         <input className="toggle" type="checkbox" checked={props.isChecked ? 'checked' : ''} onChange={props.onChange}/>        
         <label>{props.todoItem}</label>
         <button className="destroy" onClick={props.onClick} />
       </div>
-      <input className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress} autofocus/>
+      <input value={props.todoItem} className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress} autofocus/>
     </li>
   );
 }
@@ -17,15 +17,16 @@ function TodoListItem(props) {
 class TodoLists extends React.Component {
   render() {
     const todoList = this.props.todoList;
-    const todoListItems = todoList.map((obj, index) => ((
+    const todoListItems = todoList.map((value, index) => ((
       <TodoListItem 
-      isChecked={todoList[index].isChecked ? 'completed':''} 
+      isChecked={value.isChecked ? 'completed':''} 
+      isHidden={value.isHidden ? 'hidden' : ''}
       onChange={() => this.props.onChange(index)} 
       onClick={() => this.props.onClick(index)}
       onDoubleClick={() => this.props.onDoubleClick(index)}
-      isEditing={todoList[index].isEditing ? 'editing' : ''}
-      index={index}
-      todoItem={todoList[index].todoItem} 
+      isEditing={value.isEditing ? 'editing' : ''}
+      id={value.todoId}
+      todoItem={value.todoItem} 
       onKeyPress={(event) => this.props.onKeyPress(event, index)}
       onKeyDown={(event) => this.props.onKeyDown(event, index)}
       />
@@ -33,23 +34,6 @@ class TodoLists extends React.Component {
     return (
       <ul className="todo-list">
         {todoListItems}
-      {/* <TodoListItem todoItem={this.props.todoItem} /> */}
-      {/* <li className="completed">
-        <div className="view">
-          <input className="toggle" type="checkbox" checked />
-          <label>Taste JavaScript</label>
-          <button className="destroy" />
-        </div>
-        <input className="edit" value="Create a TodoMVC template" />
-      </li> */}
-      {/* <li>
-        <div className="view">
-          <input className="toggle" type="checkbox" />
-          <label>Buy a unicorn</label>
-          <button className="destroy"></button>
-        </div>
-        <input className="edit" value="Rule the web" />
-      </li> */}
     </ul>
     )
   }
@@ -59,14 +43,18 @@ class App extends React.Component {
   constructor(props){
     super(props);
     this.ref = React.createRef();
-    this.state = { 
+    const getState = JSON.parse(localStorage.getItem('state'));
+    // console.log(getState);
+    this.state = getState || {
       todoList: [
         // { todoItem: ,     
         // isChecked: 
         // isEditing: }
       ],
       istoggle: false,
+      currentFilterHref: '#/',
     };
+    
     this.handleEnterKeyPress = this.handleEnterKeyPress.bind(this);
     this.handleKeyPress = this.handleKeyPress.bind(this);
     this.handleClick = this.handleClick.bind(this);
@@ -77,6 +65,10 @@ class App extends React.Component {
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.clearCompleted = this.clearCompleted.bind(this);
     this.handleClickClear = this.handleClickClear.bind(this);
+
+    this.handleCompletedClick = this.handleCompletedClick.bind(this);
+    this.handleAllClick = this.handleAllClick.bind(this);
+    this.handleActiveClick = this.handleActiveClick.bind(this);
   }
 
   handleEnterKeyPress(e) {
@@ -84,7 +76,7 @@ class App extends React.Component {
       const newItem = e.target.value;
       const prevTodoList = this.state.todoList.slice();
       const randomNum = Math.floor(Math.random()*1000000);
-      const pushValue = { todoId: randomNum, todoItem: newItem, isChecked: this.state.istoggle ? true : false, isEditing: false};
+      const pushValue = { todoId: randomNum, todoItem: newItem, isChecked: this.state.istoggle ? true : false, isEditing: false, isHidden: this.state.currentFilterHref === '#/completed' ? true : false};
       prevTodoList.push(pushValue);
       this.setState({ todoList: prevTodoList });
       e.target.value = '';
@@ -138,10 +130,10 @@ class App extends React.Component {
     const prevTodoList = this.state.todoList.slice();
     if(this.state.istoggle){
       var toggleValue =  !this.state.istoggle;
-      prevTodoList.map((value, index) => prevTodoList[index].isChecked = toggleValue);
+      prevTodoList.map((value, index) => value.isChecked = toggleValue);
     }else if(!this.state.istoggle){
       var toggleValue =  !this.state.istoggle;
-      prevTodoList.map((value, index) => prevTodoList[index].isChecked = toggleValue);
+      prevTodoList.map((value, index) => value.isChecked = toggleValue);
     }
     console.log('토글의 상태는 ' + toggleValue);
     this.setState({ todoList: prevTodoList, istoggle: toggleValue });
@@ -173,8 +165,26 @@ class App extends React.Component {
     return checkedItem > 0 ? 'Clear completed' : ''
   }
 
+  handleAllClick() {
+    const prevTodoList = this.state.todoList.slice();
+    prevTodoList.map((value) => value.isHidden = false);
+    this.setState({ todoList: prevTodoList, currentFilterHref: '#/'});
+  }
+
+  handleActiveClick() {
+    const prevTodoList = this.state.todoList.slice();
+    prevTodoList.map((value) => value.isChecked ? value.isHidden = true : value.isHidden = false);
+    this.setState({ todoList: prevTodoList, currentFilterHref: '#/active' });
+  }
+
+  handleCompletedClick() {
+    const prevTodoList = this.state.todoList.slice();
+    prevTodoList.map((value) => !value.isChecked ? value.isHidden = true : value.isHidden = false);
+    this.setState({ todoList: prevTodoList, currentFilterHref: '#/completed' });
+  }
+
   componentDidUpdate() {
-    console.log(this.state.todoList);
+    localStorage.setItem('state', JSON.stringify(this.state));
   }
 
   render() {
@@ -205,14 +215,14 @@ class App extends React.Component {
           <footer className="footer">
             <span className="todo-count"><strong>{this.countItemLeft()}</strong> item left</span>
             <ul className="filters">
-              <li>
-                <a className="selected" href="#/">All</a>
+              <li onClick={this.handleAllClick}>
+                <a className={this.state.currentFilterHref=== '#/' ? 'selected' : ''} href="#/">All</a>
               </li>
-              <li>
-                <a href="#/active">Active</a>
+              <li onClick={this.handleActiveClick}>
+                <a className={this.state.currentFilterHref=== '#/active' ? 'selected' : ''} href="#/active">Active</a>
               </li>
-              <li>
-                <a href="#/completed">Completed</a>
+              <li onClick={this.handleCompletedClick}>
+                <a className={this.state.currentFilterHref=== '#/completed' ? 'selected' : ''} href="#/completed">Completed</a>
               </li>
             </ul>
             <button className="clear-completed" onClick={this.handleClickClear}>{this.clearCompleted()}</button>
