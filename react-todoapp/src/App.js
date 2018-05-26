@@ -8,7 +8,7 @@ function TodoListItem(props) {
         <label>{props.todoItem}</label>
         <button className="destroy" onClick={props.onClick} />
       </div>
-      <input value={props.isEditing === 'editing' ? props.tempItem : props.todoItem} onChange={props.onValueChange} className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress} autofocus="autofocus"/>
+      <input value={props.isEditing === 'editing' ? props.tempItem : props.todoItem} onChange={props.onValueChange} className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress}/>
     </li>
   );
 }
@@ -23,7 +23,7 @@ class TodoLists extends React.Component {
       isHidden={value.isHidden ? 'hidden' : ''}
       onChange={() => this.props.onChange(index)} 
       onClick={() => this.props.onClick(index)}
-      onDoubleClick={() => this.props.onDoubleClick(index)}
+      onDoubleClick={(event) => this.props.onDoubleClick(event, index)}
       isEditing={value.isEditing ? 'editing' : ''}
       id={value.todoId}
       todoItem={value.todoItem} 
@@ -48,11 +48,7 @@ class App extends React.Component {
     const getState = JSON.parse(localStorage.getItem('state'));
     // console.log(getState);
     this.state = getState || {
-      todoList: [
-        // { todoItem: ,     
-        // isChecked: 
-        // isEditing: }
-      ],
+      todoList: [],
       istoggle: false,
       currentFilterHref: '#/',
     };
@@ -78,8 +74,15 @@ class App extends React.Component {
     if(e.key == 'Enter' && e.target.value !== "") {
       const newItem = e.target.value;
       const prevTodoList = this.state.todoList.slice();
-      const randomNum = Math.floor(Math.random()*1000000);
-      const pushValue = { todoId: randomNum, todoItem: newItem, tempItem: '', isChecked: this.state.istoggle ? true : false, isEditing: false, isHidden: this.state.currentFilterHref === '#/completed' ? true : false};
+      const randomNum = Math.floor(Math.random()*1000000)+this.state.todoList.length;
+      const pushValue = { 
+        todoId: randomNum, 
+        todoItem: newItem, 
+        tempItem: '', 
+        isChecked: this.state.istoggle ? true : false, 
+        isEditing: false, 
+        isHidden: this.state.currentFilterHref === '#/completed' && this.state.istoggle === false || this.state.currentFilterHref === '#/active' && this.state.istoggle === true ? true : false,
+      };
       prevTodoList.push(pushValue);
       this.setState({ todoList: prevTodoList });
       e.target.value = '';
@@ -129,22 +132,27 @@ class App extends React.Component {
     this.setState({ todoList: prevTodoList });
   }
 
-  handleDoubleClick(itemIndex) {
+  handleDoubleClick(e, itemIndex) {
     const prevTodoList = this.state.todoList.slice();
     prevTodoList[itemIndex].tempItem = prevTodoList[itemIndex].todoItem;
     prevTodoList[itemIndex].isEditing = true;
+    e.target.focus();
     this.setState({ todoList: prevTodoList });
   }
 
   handleToggle() {
     const prevTodoList = this.state.todoList.slice();
-    if(this.state.istoggle){
-      var toggleValue =  !this.state.istoggle;
-      prevTodoList.map((value, index) => value.isChecked = toggleValue);
-    }else if(!this.state.istoggle){
-      var toggleValue =  !this.state.istoggle;
-      prevTodoList.map((value, index) => value.isChecked = toggleValue);
-    }
+    const toggleValue = !this.state.istoggle;
+    prevTodoList.map((value, index) => {
+      value.isChecked = toggleValue
+      if(this.state.currentFilterHref === '#/') {
+        value.isHidden = false;
+      }else if(this.state.currentFilterHref === '#/active') {
+        value.isHidden = toggleValue;
+      }else {
+        value.isHidden = !toggleValue
+      }
+    });
     console.log('토글의 상태는 ' + toggleValue);
     this.setState({ todoList: prevTodoList, istoggle: toggleValue });
   }
@@ -160,13 +168,8 @@ class App extends React.Component {
   }
 
   countItemLeft() {
-    const prevTodoList = this.state.todoList.slice();
-    const wholeItem = this.state.todoList.length;
-    const checkedArr = [];
-    prevTodoList.map((value, index) => checkedArr.push(prevTodoList[index].isChecked));
-    const checkedItem = checkedArr.filter(value => value).length;
-    const itemLeft = wholeItem - checkedItem;
-    return itemLeft;
+    const itemLeft = this.state.todoList.filter((v) => !v.isChecked);
+    return itemLeft.length;
   }
 
   clearCompleted() {
