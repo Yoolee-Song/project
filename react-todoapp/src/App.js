@@ -8,7 +8,7 @@ function TodoListItem(props) {
         <label>{props.todoItem}</label>
         <button className="destroy" onClick={props.onClick} />
       </div>
-      <input value={props.todoItem} className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress} autofocus/>
+      <input value={props.isEditing === 'editing' ? props.tempItem : props.todoItem} onChange={props.onValueChange} className="edit" onKeyDown={props.onKeyDown} onKeyPress={props.onKeyPress} autofocus="autofocus"/>
     </li>
   );
 }
@@ -27,8 +27,10 @@ class TodoLists extends React.Component {
       isEditing={value.isEditing ? 'editing' : ''}
       id={value.todoId}
       todoItem={value.todoItem} 
+      tempItem={value.tempItem}
       onKeyPress={(event) => this.props.onKeyPress(event, index)}
       onKeyDown={(event) => this.props.onKeyDown(event, index)}
+      onValueChange={(event) => this.props.onValueChange(event, index)}
       />
     )));
     return (
@@ -65,6 +67,7 @@ class App extends React.Component {
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.clearCompleted = this.clearCompleted.bind(this);
     this.handleClickClear = this.handleClickClear.bind(this);
+    this.handleValueChange = this.handleValueChange.bind(this);
 
     this.handleCompletedClick = this.handleCompletedClick.bind(this);
     this.handleAllClick = this.handleAllClick.bind(this);
@@ -76,11 +79,17 @@ class App extends React.Component {
       const newItem = e.target.value;
       const prevTodoList = this.state.todoList.slice();
       const randomNum = Math.floor(Math.random()*1000000);
-      const pushValue = { todoId: randomNum, todoItem: newItem, isChecked: this.state.istoggle ? true : false, isEditing: false, isHidden: this.state.currentFilterHref === '#/completed' ? true : false};
+      const pushValue = { todoId: randomNum, todoItem: newItem, tempItem: '', isChecked: this.state.istoggle ? true : false, isEditing: false, isHidden: this.state.currentFilterHref === '#/completed' ? true : false};
       prevTodoList.push(pushValue);
       this.setState({ todoList: prevTodoList });
       e.target.value = '';
     }
+  }
+
+  handleValueChange(e, index) {
+    const prevTodoList = this.state.todoList.slice();
+    prevTodoList[index].tempItem = e.target.value;
+    this.setState({ todoList: prevTodoList });
   }
 
   handleKeyPress(e, index){
@@ -122,6 +131,7 @@ class App extends React.Component {
 
   handleDoubleClick(itemIndex) {
     const prevTodoList = this.state.todoList.slice();
+    prevTodoList[itemIndex].tempItem = prevTodoList[itemIndex].todoItem;
     prevTodoList[itemIndex].isEditing = true;
     this.setState({ todoList: prevTodoList });
   }
@@ -185,6 +195,7 @@ class App extends React.Component {
 
   componentDidUpdate() {
     localStorage.setItem('state', JSON.stringify(this.state));
+    console.log(localStorage.getItem('state'));
   }
 
   render() {
@@ -210,6 +221,7 @@ class App extends React.Component {
               onDoubleClick={this.handleDoubleClick}
               onKeyPress={this.handleKeyPress}
               onKeyDown={this.handleKeyDown}
+              onValueChange={this.handleValueChange}
             />
           </section>
           <footer className="footer">
