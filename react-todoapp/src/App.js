@@ -129,7 +129,15 @@ class App extends React.Component {
   handleChange(itemIndex) {
     const prevTodoList = this.state.todoList.slice();
     prevTodoList[itemIndex].isChecked = prevTodoList[itemIndex].isChecked ? false : true;
-    this.setState({ todoList: prevTodoList });
+    if(this.state.currentFilterHref === '#/active') {
+      prevTodoList.map((value) => value.isChecked ? value.isHidden = true : false);
+    }else if(this.state.currentFilterHref === '#/completed') {
+      prevTodoList.map((value) => !value.isChecked ? value.isHidden = true : false); 
+    }else {
+    prevTodoList.map((value) => value.isHidden = false);
+    }
+    const toggleValue = prevTodoList.filter((value) => !value.isChecked).length === 0 ? true : false;
+    this.setState({ todoList: prevTodoList, istoggle: toggleValue });
   }
 
   handleDoubleClick(e, itemIndex) {
@@ -198,7 +206,7 @@ class App extends React.Component {
 
   componentDidUpdate() {
     localStorage.setItem('state', JSON.stringify(this.state));
-    console.log(localStorage.getItem('state'));
+    console.log(this.state);
   }
 
   render() {
@@ -215,7 +223,7 @@ class App extends React.Component {
             />
           </header>
           <section className="main">
-            <input id="toggle-all" className="toggle-all" type="checkbox" />
+            <input id="toggle-all" className="toggle-all" type="checkbox" checked={this.state.istoggle ? 'checked' : ''}/>
             <label htmlFor="toggle-all" onClick={this.handleToggle}>Mark all as complete</label>
             <TodoLists
               todoList={this.state.todoList}
