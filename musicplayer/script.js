@@ -1,3 +1,4 @@
+/// 플레이 리스트
 var playlist = [{
     singer: "Crush",
     title: "Whatever You Do (Feat. Gray)",
